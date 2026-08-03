@@ -13,11 +13,6 @@ class APIRequestError(HomeworkBotError):
     pass
 
 
-class InvalidResponseError(HomeworkBotError):
-    """Выбрасывается при некорректном ответе API."""
-    pass
-
-
 class UnknownStatusError(HomeworkBotError):
     """Выбрасывается при получении неизвестного статуса."""
     pass

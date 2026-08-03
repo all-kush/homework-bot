@@ -7,7 +7,8 @@ import time
 import sys
 from exceptions import (
     MissingTokensError,
-    APIRequestError
+    APIRequestError,
+    UnknownStatusError
 )
 
 
@@ -105,7 +106,7 @@ def check_response(response):
             logging.error('Элемент списка homeworks не является словарем')
             raise TypeError(
                 'Ожидался словарь с данными домашней работы')
-        required_fields = ('id', 'homework_name', 'status')
+        required_fields = ('id', 'lesson_name', 'status')
         for field in required_fields:
             if field not in homework:
                 logging.error(f'В домашней работе отсутствует \
@@ -115,7 +116,7 @@ def check_response(response):
         if homework['status'] not in HOMEWORK_VERDICTS:
             logging.error(f'Неизвестный статус домашней работы:\
                               {homework["status"]}')
-            raise ValueError(f'Неизвестный статус домашней работы:\
+            raise UnknownStatusError(f'Неизвестный статус домашней работы:\
                               {homework["status"]}')
 
 
@@ -129,7 +130,7 @@ def parse_status(homework):
         raise KeyError('Отсутствует ключ "status"')
     if homework_status not in HOMEWORK_VERDICTS:
         logging.error('Неизвестный статус домашней работы: {homework_status}')
-        raise ValueError(f'Неизвестный статус домашней работы: \
+        raise UnknownStatusError(f'Неизвестный статус домашней работы: \
                        {homework_status}')
     verdict = HOMEWORK_VERDICTS[homework_status]
     return f'Изменился статус проверки работы "{homework_name}". {verdict}'
