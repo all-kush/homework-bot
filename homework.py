@@ -51,8 +51,13 @@ def check_tokens():
         if not value:
             missed_ones.append(name)
     if missed_ones:
-        logging.critical(f'Некоторые переменные окружения отсутствуют: {", ".join(missed_ones)}')
-        raise MissingTokensError('Невозможно продолжить: отсутствуют переменные окружения.')
+        logging.critical(
+            f'Некоторые переменные окружения отсутствуют: '
+            f'{", ".join(missed_ones)}'
+            )
+        raise MissingTokensError(
+            'Невозможно продолжить: отсутствуют переменные окружения.'
+            )
 
 
 def send_message(bot, message):
@@ -77,7 +82,9 @@ def get_api_answer(timestamp):
         return response.json()
     except Exception as error:
         logging.error(f'Эндпоинт {ENDPOINT} недоступен. Ошибка: {error}')
-        raise APIRequestError(f'Эндпоинт {ENDPOINT} недоступен. Ошибка: {error}')
+        raise APIRequestError(
+            f'Эндпоинт {ENDPOINT} недоступен. Ошибка: {error}'
+            )
 
 
 def check_response(response):
@@ -91,13 +98,16 @@ def check_response(response):
     homeworks = response['homeworks']
     if not isinstance(homeworks, list):
         logging.error('Ключ "homeworks" не является списком')
-        raise InvalidResponseError(f'Ключ "homeworks" должен содержать список, \
-                         а не {type(homeworks)}')
+        raise InvalidResponseError(
+            f'Ключ "homeworks" должен содержать список, а не {type(homeworks)}'
+            )
 
     for homework in homeworks:
         if not isinstance(homework, dict):
             logging.error('Элемент списка homeworks не является словарем')
-            raise InvalidResponseError('Ожидался словарь с данными домашней работы')
+            raise InvalidResponseError(
+                'Ожидался словарь с данными домашней работы'
+                )
         required_fields = ('id', 'lesson_name', 'status')
         for field in required_fields:
             if field not in homework:
@@ -126,7 +136,6 @@ def parse_status(homework):
 
 def main():
     """Основная логика работы бота."""
-
     check_tokens()
 
     bot = TeleBot(token=TELEGRAM_TOKEN)
