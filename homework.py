@@ -7,9 +7,7 @@ import time
 import sys
 from exceptions import (
     MissingTokensError,
-    APIRequestError,
-    InvalidResponseError,
-    UnknownStatusError,
+    APIRequestError
 )
 
 
@@ -76,7 +74,10 @@ def get_api_answer(timestamp):
     try:
         response = requests.get(ENDPOINT, headers=HEADERS,
                                 params=params)
-        response.raise_for_status()
+        if response.status_code != 200:
+            raise APIRequestError(
+                f'Эндпоинт {ENDPOINT} недоступен. '
+                f'Код ответа: {response.status_code}')
         return response.json()
     except Exception as error:
         logging.error(f'Эндпоинт {ENDPOINT} недоступен. Ошибка: {error}')
@@ -88,43 +89,47 @@ def check_response(response):
     """Проверяет ответ API на соответствие документации."""
     if not isinstance(response, dict):
         logging.error('Ответ API не является словарем')
-        raise InvalidResponseError('Ожидался словарь!')
+        raise TypeError('Ожидался словарь!')
     if 'homeworks' not in response:
         logging.error('В ответе API нет ключа "homeworks"')
-        raise InvalidResponseError('В ответе нет ключа "homeworks"')
+        raise ValueError('В ответе нет ключа "homeworks"')
     homeworks = response['homeworks']
     if not isinstance(homeworks, list):
         logging.error('Ключ "homeworks" не является списком')
-        raise InvalidResponseError(
+        raise TypeError(
             f'Ключ "homeworks" должен содержать список, '
             f'а не {type(homeworks)}')
 
     for homework in homeworks:
         if not isinstance(homework, dict):
             logging.error('Элемент списка homeworks не является словарем')
-            raise InvalidResponseError(
+            raise TypeError(
                 'Ожидался словарь с данными домашней работы')
-        required_fields = ('id', 'lesson_name', 'status')
+        required_fields = ('id', 'homework_name', 'status')
         for field in required_fields:
             if field not in homework:
                 logging.error(f'В домашней работе отсутствует \
                               обязательное поле {field}')
-                raise InvalidResponseError(f'В домашней работе отсутствует \
+                raise ValueError(f'В домашней работе отсутствует \
                                  обязательное поле {field}')
         if homework['status'] not in HOMEWORK_VERDICTS:
             logging.error(f'Неизвестный статус домашней работы:\
                               {homework["status"]}')
-            raise UnknownStatusError(f'Неизвестный статус домашней работы:\
+            raise ValueError(f'Неизвестный статус домашней работы:\
                               {homework["status"]}')
 
 
 def parse_status(homework):
     """Извлекает статус домашней работы."""
     homework_status = homework.get('status')
-    homework_name = homework.get('lesson_name')
+    homework_name = homework.get('homework_name')
+    if homework_name is None:
+        raise KeyError('Отсутствует ключ "homework_name"')
+    if homework_status is None:
+        raise KeyError('Отсутствует ключ "status"')
     if homework_status not in HOMEWORK_VERDICTS:
-        logging.error('Неизвестный статус домашней работы')
-        raise UnknownStatusError(f'Неизвестный статус домашней работы: \
+        logging.error('Неизвестный статус домашней работы: {homework_status}')
+        raise ValueError(f'Неизвестный статус домашней работы: \
                        {homework_status}')
     verdict = HOMEWORK_VERDICTS[homework_status]
     return f'Изменился статус проверки работы "{homework_name}". {verdict}'
