@@ -53,11 +53,9 @@ def check_tokens():
     if missed_ones:
         logging.critical(
             f'Некоторые переменные окружения отсутствуют: '
-            f'{", ".join(missed_ones)}'
-            )
+            f'{", ".join(missed_ones)}')
         raise MissingTokensError(
-            'Невозможно продолжить: отсутствуют переменные окружения.'
-            )
+            'Невозможно продолжить: отсутствуют переменные окружения.')
 
 
 def send_message(bot, message):
@@ -83,8 +81,7 @@ def get_api_answer(timestamp):
     except Exception as error:
         logging.error(f'Эндпоинт {ENDPOINT} недоступен. Ошибка: {error}')
         raise APIRequestError(
-            f'Эндпоинт {ENDPOINT} недоступен. Ошибка: {error}'
-            )
+            f'Эндпоинт {ENDPOINT} недоступен. Ошибка: {error}')
 
 
 def check_response(response):
@@ -99,15 +96,14 @@ def check_response(response):
     if not isinstance(homeworks, list):
         logging.error('Ключ "homeworks" не является списком')
         raise InvalidResponseError(
-            f'Ключ "homeworks" должен содержать список, а не {type(homeworks)}'
-            )
+            f'Ключ "homeworks" должен содержать список, '
+            f'а не {type(homeworks)}')
 
     for homework in homeworks:
         if not isinstance(homework, dict):
             logging.error('Элемент списка homeworks не является словарем')
             raise InvalidResponseError(
-                'Ожидался словарь с данными домашней работы'
-                )
+                'Ожидался словарь с данными домашней работы')
         required_fields = ('id', 'lesson_name', 'status')
         for field in required_fields:
             if field not in homework:
