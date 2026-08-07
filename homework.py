@@ -1,13 +1,16 @@
 import logging
 import os
-import requests
-from telebot import TeleBot
-from dotenv import load_dotenv
-import time
 import sys
+import time
+
+import requests
+from dotenv import load_dotenv
+from http import HTTPStatus
+from telebot import apihelper, TeleBot
+
 from exceptions import (
-    MissingTokensError,
     APIRequestError,
+    MissingTokensError,
     UnknownStatusError
 )
 
@@ -29,13 +32,6 @@ HOMEWORK_VERDICTS = {
     'reviewing': 'Работа взята на проверку ревьюером.',
     'rejected': 'Работа проверена: у ревьюера есть замечания.'
 }
-
-logging.basicConfig(
-    format='%(asctime)s [%(levelname)s] %(message)s',
-    level=logging.DEBUG,
-    encoding='utf-8',
-    handlers=[logging.StreamHandler(sys.stdout)]
-)
 
 
 def check_tokens():
@@ -65,8 +61,13 @@ def send_message(bot, message):
             text=message,
         )
         logging.debug(f'Бот отправил сообщение "{message}"')
+    except apihelper.ApiException as error:
+        logging.error(f'Ошибка Telegram API при отправке сообщения: {error}')
+    except requests.exceptions.RequestException as error:
+        logging.error(f'Сетевая ошибка при отправке сообщения: {error}')
     except Exception as error:
-        logging.error(f'Ошибка при отправке сообщения в Telegram: {error}')
+        logging.error(f'Неизвестная ошибка при отправке сообщения в Telegram: '
+                      f'{error}')
 
 
 def get_api_answer(timestamp):
@@ -75,15 +76,18 @@ def get_api_answer(timestamp):
     try:
         response = requests.get(ENDPOINT, headers=HEADERS,
                                 params=params)
-        if response.status_code != 200:
-            raise APIRequestError(
-                f'Эндпоинт {ENDPOINT} недоступен. '
-                f'Код ответа: {response.status_code}')
-        return response.json()
-    except Exception as error:
-        logging.error(f'Эндпоинт {ENDPOINT} недоступен. Ошибка: {error}')
+        data = response.json()
+    except requests.exceptions.RequestException as error:
         raise APIRequestError(
             f'Эндпоинт {ENDPOINT} недоступен. Ошибка: {error}')
+    except ValueError as error:
+        raise APIRequestError(
+            f'Некорректный JSON в ответе API: {error}')
+    if response.status_code != HTTPStatus.OK:
+        raise APIRequestError(
+            f'Эндпоинт {ENDPOINT} недоступен. '
+            f'Код ответа: {response.status_code}')
+    return data
 
 
 def check_response(response):
@@ -138,6 +142,12 @@ def parse_status(homework):
 
 def main():
     """Основная логика работы бота."""
+    logging.basicConfig(
+        format='%(asctime)s [%(levelname)s] %(message)s',
+        level=logging.DEBUG,
+        encoding='utf-8',
+        handlers=[logging.StreamHandler(sys.stdout)])
+
     check_tokens()
 
     bot = TeleBot(token=TELEGRAM_TOKEN)
