@@ -65,9 +65,6 @@ def send_message(bot, message):
         logging.error(f'Ошибка Telegram API при отправке сообщения: {error}')
     except requests.exceptions.RequestException as error:
         logging.error(f'Сетевая ошибка при отправке сообщения: {error}')
-    except Exception as error:
-        logging.error(f'Неизвестная ошибка при отправке сообщения в Telegram: '
-                      f'{error}')
 
 
 def get_api_answer(timestamp):
@@ -93,33 +90,25 @@ def get_api_answer(timestamp):
 def check_response(response):
     """Проверяет ответ API на соответствие документации."""
     if not isinstance(response, dict):
-        logging.error('Ответ API не является словарем')
-        raise TypeError('Ожидался словарь!')
+        raise TypeError('Ответ API не является словарем!')
     if 'homeworks' not in response:
-        logging.error('В ответе API нет ключа "homeworks"')
-        raise ValueError('В ответе нет ключа "homeworks"')
+        raise ValueError('В ответе API нет ключа "homeworks"')
     homeworks = response['homeworks']
     if not isinstance(homeworks, list):
-        logging.error('Ключ "homeworks" не является списком')
         raise TypeError(
             f'Ключ "homeworks" должен содержать список, '
             f'а не {type(homeworks)}')
 
     for homework in homeworks:
         if not isinstance(homework, dict):
-            logging.error('Элемент списка homeworks не является словарем')
             raise TypeError(
-                'Ожидался словарь с данными домашней работы')
+                'Элемент списка homeworks не является словарем')
         required_fields = ('homework_name', 'status')
         for field in required_fields:
             if field not in homework:
-                logging.error(f'В домашней работе отсутствует \
-                              обязательное поле {field}')
                 raise ValueError(f'В домашней работе отсутствует \
                                  обязательное поле {field}')
         if homework['status'] not in HOMEWORK_VERDICTS:
-            logging.error(f'Неизвестный статус домашней работы:\
-                              {homework["status"]}')
             raise UnknownStatusError(f'Неизвестный статус домашней работы:\
                               {homework["status"]}')
 
@@ -133,7 +122,6 @@ def parse_status(homework):
     if homework_status is None:
         raise KeyError('Отсутствует ключ "status"')
     if homework_status not in HOMEWORK_VERDICTS:
-        logging.error('Неизвестный статус домашней работы: {homework_status}')
         raise UnknownStatusError(f'Неизвестный статус домашней работы: \
                        {homework_status}')
     verdict = HOMEWORK_VERDICTS[homework_status]
@@ -142,12 +130,6 @@ def parse_status(homework):
 
 def main():
     """Основная логика работы бота."""
-    logging.basicConfig(
-        format='%(asctime)s [%(levelname)s] %(message)s',
-        level=logging.DEBUG,
-        encoding='utf-8',
-        handlers=[logging.StreamHandler(sys.stdout)])
-
     check_tokens()
 
     bot = TeleBot(token=TELEGRAM_TOKEN)
@@ -179,4 +161,9 @@ def main():
 
 
 if __name__ == '__main__':
+    logging.basicConfig(
+        format='%(asctime)s [%(levelname)s] %(message)s',
+        level=logging.DEBUG,
+        encoding='utf-8',
+        handlers=[logging.StreamHandler(sys.stdout)])
     main()
